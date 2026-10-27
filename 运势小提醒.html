@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>八字 · 奇门 · 星盘 运势原型</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: linear-gradient(145deg, #1e1a2e 0%, #2a243b 100%);
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh; display: flex; justify-content: center; align-items: flex-start;
+      padding: 20px;
+    }
+    .app-container {
+      max-width: 1100px; width: 100%;
+      background: rgba(22, 18, 35, 0.85);
+      backdrop-filter: blur(16px);
+      border-radius: 42px;
+      border: 1px solid rgba(210, 180, 255, 0.15);
+      box-shadow: 0 30px 50px -20px rgba(0,0,0,0.8);
+      padding: 30px 28px 36px;
+    }
+    h1 { font-size: 1.9rem; font-weight: 500; color: #f0e6ff; display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+    h1 span.grad { background: linear-gradient(135deg, #e8c9a0, #d4a5ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 600; }
+    .subhead { color: #b9a9d4; font-size: 0.85rem; margin-bottom: 24px; border-left: 3px solid #a884d4; padding-left: 16px; }
+
+    .input-section {
+      background: rgba(255,255,255,0.04); border-radius: 28px; padding: 20px 22px; margin-bottom: 26px;
+      border: 1px solid rgba(200,170,255,0.2); display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px 18px;
+    }
+    .field-group { display: flex; flex-direction: column; gap: 5px; flex: 1 1 150px; }
+    .field-group label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.1px; color: #b4a0d6; }
+    .field-group input, .field-group select {
+      background: rgba(10,6,20,0.7); border: 1px solid rgba(170,140,220,0.4);
+      border-radius: 60px; padding: 11px 16px; color: #f0eaff; font-size: 0.9rem; outline: none; font-family: inherit;
+    }
+    .field-group input:focus, .field-group select:focus { border-color: #c9a2ff; box-shadow: 0 0 0 3px rgba(180,130,255,0.2); }
+    .generate-btn {
+      background: linear-gradient(135deg, #6f4f9c, #9772d1); border: none; border-radius: 60px; padding: 11px 30px;
+      font-weight: 600; font-size: 0.95rem; color: #fefaff; cursor: pointer; transition: all 0.2s;
+      box-shadow: 0 8px 22px -6px #6b3fa0; white-space: nowrap; margin-left: auto;
+    }
+    .generate-btn:hover { background: linear-gradient(135deg, #7d5bb0, #ac89e2); transform: translateY(-2px); }
+
+    .bazi-preview {
+      margin-bottom: 22px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px;
+      background: rgba(120,90,180,0.15); border-radius: 60px; padding: 10px 22px;
+      border: 1px solid rgba(200,170,255,0.2); font-size: 0.9rem; color: #d8c6f5;
+    }
+    .bazi-preview .pill { background: #2d2144; padding: 5px 13px; border-radius: 40px; border: 1px solid #8c70b0; color: #ecdaff; font-weight: 500; }
+    .bazi-preview .label { color: #b09bd0; margin-right: 4px; }
+
+    .section-title { color: #d4c0f0; font-size: 1rem; font-weight: 500; margin: 26px 0 12px; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
+    .section-title .badge-icon { font-size: 1.1rem; }
+
+    .cards-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    @media (max-width: 750px) { .cards-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 480px) { .cards-grid { grid-template-columns: 1fr; } }
+
+    .fortune-card {
+      background: linear-gradient(165deg, rgba(40,30,60,0.9), rgba(28,20,45,0.9));
+      border-radius: 22px; padding: 16px 14px 14px; border: 1px solid rgba(200,170,255,0.2);
+    }
+    .fortune-card h3 { font-size: 0.95rem; color: #e9d8ff; margin-bottom: 8px; font-weight: 500; }
+    .fortune-level {
+      font-size: 1.8rem; font-weight: 600;
+      background: linear-gradient(to right, #f6e6c0, #e2c6ff);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .fortune-desc { font-size: 0.78rem; color: #bcaad8; margin: 8px 0 10px; line-height: 1.5; border-left: 2px solid #8a6cb0; padding-left: 10px; min-height: 52px; }
+    .badge-row { display: flex; flex-wrap: wrap; gap: 5px; }
+    .badge { background: #221b30; border-radius: 30px; padding: 3px 9px; font-size: 0.65rem; color: #b8a2dc; border: 1px solid #4b3a66; }
+    .badge.good { border-color: #6a9e6a; color: #b3e6b3; }
+    .badge.warn { border-color: #b18e4b; color: #eed7a1; }
+
+    .qimen-panel, .astro-panel {
+      background: rgba(255,255,255,0.03); border-radius: 24px; padding: 18px 20px;
+      border: 1px solid rgba(200,170,255,0.15); margin-top: 10px;
+    }
+    .qimen-summary { display: flex; flex-wrap: wrap; gap: 12px 22px; margin-bottom: 14px; }
+    .qimen-summary .item { font-size: 0.85rem; color: #cbb7f0; }
+    .qimen-summary .item strong { color: #f0e6ff; font-weight: 500; }
+    .palace-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+      max-width: 460px; margin: 0 auto;
+    }
+    .palace-cell {
+      background: #1e172c; border: 1px solid #3d2f55; border-radius: 10px;
+      padding: 8px 6px; font-size: 0.68rem; color: #bcaad8; text-align: center; min-height: 58px;
+    }
+    .palace-cell .palace-num { color: #8a70b0; font-size: 0.6rem; }
+    .palace-cell .star { color: #e0d0ff; font-weight: 500; }
+    .palace-cell .door { color: #b3e6b3; }
+    .palace-cell .stem { color: #eed7a1; }
+
+    .astro-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+    .astro-item {
+      background: #1e172c; border-radius: 12px; padding: 10px 12px;
+      border: 1px solid #3d2f55; font-size: 0.8rem;
+    }
+    .astro-item .body-name { color: #d4c0f0; font-weight: 500; }
+    .astro-item .sign { color: #eed7a1; }
+    .astro-item .degree { color: #8a70b0; font-size: 0.7rem; margin-left: 4px; }
+
+    .error-msg { color: #ff9e9e; font-size: 0.8rem; padding: 6px 0; }
+    .footnote { margin-top: 28px; font-size: 0.7rem; color: #6b5d85; text-align: center; border-top: 1px solid rgba(140,110,180,0.2); padding-top: 16px; }
+    .loading { color: #b8a2dc; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+<div class="app-container">
+  <h1><span class="grad">☯︎ 八字 · 奇门 · 星盘</span> <span style="font-weight:300; font-size:1.2rem; color:#b39ddb;">原型</span></h1>
+  <div class="subhead">八字排盘（lunar-javascript） · 奇门起局（qimen-dunjia） · 星盘行星位置（astronomy-engine）</div>
+
+  <div class="input-section">
+    <div class="field-group" style="flex: 2 1 180px;">
+      <label>出生日期 (公历)</label>
+      <input type="date" id="birthDate" value="2001-08-14">
+    </div>
+    <div class="field-group" style="flex: 0 1 110px;">
+      <label>出生时刻</label>
+      <input type="time" id="birthTime" value="08:59">
+    </div>
+    <button class="generate-btn" id="generateBtn">✦ 推演</button>
+  </div>
+
+  <div class="bazi-preview" id="baziPreview">
+    <span class="label">四柱</span>
+    <span class="pill" id="yearPillar">—</span>
+    <span class="pill" id="monthPillar">—</span>
+    <span class="pill" id="dayPillar">—</span>
+    <span class="pill" id="hourPillar">—</span>
+    <span class="label" style="margin-left:auto;">日主</span>
+    <span class="pill" style="background:#48376b;" id="dayMaster">—</span>
+  </div>
+
+  <div class="section-title"><span class="badge-icon">☀️</span> 八字运势（日 / 周 / 月 / 年）</div>
+  <div class="cards-grid">
+    <div class="fortune-card"><h3>日运</h3><div class="fortune-level" id="dayLevel">—</div><div class="fortune-desc" id="dayDesc">点击推演</div><div class="badge-row" id="dayBadges"></div></div>
+    <div class="fortune-card"><h3>周运</h3><div class="fortune-level" id="weekLevel">—</div><div class="fortune-desc" id="weekDesc">点击推演</div><div class="badge-row" id="weekBadges"></div></div>
+    <div class="fortune-card"><h3>月运</h3><div class="fortune-level" id="monthLevel">—</div><div class="fortune-desc" id="monthDesc">点击推演</div><div class="badge-row" id="monthBadges"></div></div>
+    <div class="fortune-card"><h3>年运</h3><div class="fortune-level" id="yearLevel">—</div><div class="fortune-desc" id="yearDesc">点击推演</div><div class="badge-row" id="yearBadges"></div></div>
+  </div>
+
+  <div class="section-title"><span class="badge-icon">🧭</span> 奇门遁甲 · 当日局</div>
+  <div class="qimen-panel" id="qimenPanel">
+    <div class="loading">等待推演…</div>
+  </div>
+
+  <div class="section-title"><span class="badge-icon">🌌</span> 星盘 · 本命行星位置 & 当前行运位置</div>
+  <div class="astro-panel" id="astroPanel">
+    <div class="loading">等待推演…</div>
+  </div>
+
+  <div class="footnote" id="footnote">⚡ 八字 / 奇门 / 星盘均为原型集成 · 相位判断未实现 · 行星位置来自 astronomy-engine</div>
+</div>
+
+<!-- 八字排盘库 -->
+<script src="https://cdn.jsdelivr.net/npm/lunar-javascript@1.6.12/lunar.js"></script>
+
+<!-- 奇门库（尝试加载，若失败会在面板提示） -->
+<script src="https://cdn.jsdelivr.net/npm/qimen-dunjia@3.1.0/dist/qimen.standalone.min.js"></script>
+
+<script type="module">
+  // 星盘用 astronomy-engine（ESM）
+  let Astronomy = null;
+  try {
+    Astronomy = await import('https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/+esm');
+  } catch (e) {
+    console.warn('astronomy-engine 加载失败', e);
+  }
+
+  // ---------- 基础数据 ----------
+  const TIAN_GAN = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+  const DI_ZHI = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+  const GAN_WUXING = [0,0,1,1,2,2,3,3,4,4];
+  const ZHI_WUXING = [4,2,0,0,2,1,1,2,3,3,2,4];
+  const WUXING_NAMES = ['木','火','土','金','水'];
+  const SHENG = [1,2,3,4,0];
+  const KE = [2,3,4,0,1];
+  const SIGNS = ['白羊','金牛','双子','巨蟹','狮子','处女','天秤','天蝎','射手','摩羯','水瓶','双鱼'];
+
+  function getWuxingRelation(wx1, wx2) {
+    if (wx1 === wx2) return '同';
+    if (SHENG[wx1] === wx2) return '生';
+    if (KE[wx1] === wx2) return '克';
+    if (SHENG[wx2] === wx1) return '被生';
+    if (KE[wx2] === wx1) return '被克';
+    return '同';
+  }
+
+  // ---------- 八字 ----------
+  function getBaziFromLunar(dateStr, timeStr) {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const [hh, mm] = timeStr.split(':').map(Number);
+    const solar = Solar.fromYmdHms(y, m, d, hh, mm, 0);
+    const lunar = solar.getLunar();
+    return {
+      yearGZ: lunar.getYearInGanZhiExact(),
+      monthGZ: lunar.getMonthInGanZhiExact(),
+      dayGZ: lunar.getDayInGanZhiExact(),
+      hourGZ: lunar.getTimeInGanZhi(),
+      lunar
+    };
+  }
+
+  function ganZhiToIndex(gz) {
+    return { ganIndex: TIAN_GAN.indexOf(gz[0]), zhiIndex: DI_ZHI.indexOf(gz[1]) };
+  }
+
+  function generateFortune(dayMasterWx, targetGz, periodType) {
+    const { ganIndex, zhiIndex } = ganZhiToIndex(targetGz);
+    const ganRel = getWuxingRelation(dayMasterWx, GAN_WUXING[ganIndex]);
+    const zhiRel = getWuxingRelation(dayMasterWx, ZHI_WUXING[zhiIndex]);
+    let score = 0, parts = [], good = [], warn = [], neu = [];
+    if (ganRel === '同') { score += 0.5; parts.push('比肩帮身'); good.push('自信 ↑'); }
+    else if (ganRel === '生') { score += 0.3; parts.push('食伤生财'); good.push('创意 ↑'); }
+    else if (ganRel === '克') { score += 0.7; parts.push('财星显现'); good.push('财运 ↑'); }
+    else if (ganRel === '被生') { score += 0.8; parts.push('印星护身'); good.push('贵人 ↑'); }
+    else if (ganRel === '被克') { score -= 0.6; parts.push('官杀压力'); warn.push('压力 ↑'); }
+    if (zhiRel === '同') { score += 0.2; parts.push('地支伏吟'); neu.push('平稳'); }
+    else if (zhiRel === '生') { score += 0.2; parts.push('地支泄气'); neu.push('劳逸结合'); }
+    else if (zhiRel === '克') { score += 0.3; parts.push('地支有制'); neu.push('稳健'); }
+    else if (zhiRel === '被生') { score += 0.4; parts.push('地支生扶'); good.push('底气足'); }
+    else if (zhiRel === '被克') { score -= 0.4; parts.push('地支相克'); warn.push('注意健康'); }
+
+    let fs = score;
+    if (periodType === 'week') fs = fs * 0.9 + 0.15;
+    else if (periodType === 'month') fs = fs * 0.8 + 0.25;
+    else if (periodType === 'year') fs = fs * 0.7 + 0.35;
+
+    let level;
+    if (fs >= 1.0) level = '大吉'; else if (fs >= 0.6) level = '吉'; else if (fs >= 0.3) level = '小吉';
+    else if (fs >= -0.2) level = '平稳'; else if (fs >= -0.6) level = '小凶'; else level = '凶';
+
+    const prefix = { day:'今日', week:'本周', month:'本月', year:'今年' }[periodType];
+    let desc = prefix + (parts.length ? parts.join('，') + '。' : '运势平顺。');
+    if (level.includes('吉')) desc += ' 利于积极行动。'; else if (level.includes('凶')) desc += ' 宜守成谨慎。'; else desc += ' 按部就班即可。';
+    const badges = [];
+    if (good[0]) badges.push({ type:'good', text: good[0] });
+    if (neu[0]) badges.push({ type:'neutral', text: neu[0] });
+    if (warn[0]) badges.push({ type:'warn', text: warn[0] });
+    return { level, desc, badges };
+  }
+
+  // ---------- 星盘（astronomy-engine） ----------
+  // 行星黄经 → 星座 + 度数
+  function lonToSign(lon) {
+    lon = ((lon % 360) + 360) % 360;
+    const signIdx = Math.floor(lon / 30) % 12;
+    const deg = (lon % 30).toFixed(1);
+    return { sign: SIGNS[signIdx], deg };
+  }
+
+  async function computeAstro(dateStr, timeStr) {
+    if (!Astronomy) throw new Error('astronomy-engine 未加载');
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const [hh, mm] = timeStr.split(':').map(Number);
+    const birthDate = new Date(Date.UTC(y, m - 1, d, hh - 8, mm, 0)); // 东八区转 UTC
+    const now = new Date();
+
+    const bodies = [
+      { name: '太阳', key: 'sun' },
+      { name: '月亮', key: 'moon' },
+      { name: '水星', key: 'mercury' },
+      { name: '金星', key: 'venus' },
+      { name: '火星', key: 'mars' },
+      { name: '木星', key: 'jupiter' },
+      { name: '土星', key: 'saturn' },
+    ];
+
+    function getLon(date, key) {
+      if (key === 'sun') return Astronomy.SunPosition(date).elon;
+      if (key === 'moon') return Astronomy.EclipticGeoMoon(date).lon;
+      const bodyMap = { mercury: Astronomy.Body.Mercury, venus: Astronomy.Body.Venus, mars: Astronomy.Body.Mars, jupiter: Astronomy.Body.Jupiter, saturn: Astronomy.Body.Saturn };
+      return Astronomy.Ecliptic(Astronomy.GeoVector(bodyMap[key], date, true)).elon;
+    }
+
+    const natal = bodies.map(b => {
+      const lon = getLon(birthDate, b.key);
+      const s = lonToSign(lon);
+      return { name: b.name, sign: s.sign, deg: s.deg };
+    });
+
+    const transit = bodies.map(b => {
+      const lon = getLon(now, b.key);
+      const s = lonToSign(lon);
+      return { name: b.name, sign: s.sign, deg: s.deg };
+    });
+
+    return { natal, transit };
+  }
+
+  // ---------- 奇门 ----------
+  function renderQimen() {
+    const panel = document.getElementById('qimenPanel');
+    if (typeof Qimen === 'undefined' || !Qimen.generateChartNow) {
+      panel.innerHTML = '<div class="error-msg">奇门库（qimen-dunjia）未加载或该版本不提供 standalone 浏览器构建。奇门功能暂不可用。</div>';
+      return;
+    }
+    try {
+      const chart = Qimen.generateChartNow({ 時區: 'UTC+8' });
+      const obj = Qimen.chartToObject ? Qimen.chartToObject(chart) : chart;
+      // 尝试读取常见字段
+      const jieQi = obj['節氣'] || '—';
+      const ju = obj['局數'] || '—';
+      const yinYang = obj['陰陽'] || '';
+      const dun = obj['遁'] || '';
+
+      let html = '<div class="qimen-summary">';
+      html += `<div class="item"><strong>节气</strong> ${jieQi}</div>`;
+      html += `<div class="item"><strong>局</strong> ${yinYang}${dun} ${ju} 局</div>`;
+      html += '</div>';
+
+      // 如果存在九宫数组，尝试渲染
+      const palaces = obj['九宮'] || obj['palaces'] || obj['宮位'];
+      if (palaces && Array.isArray(palaces)) {
+        html += '<div class="palace-grid">';
+        palaces.forEach((p, i) => {
+          if (i === 4) return; // 中宫通常不显
+          const num = p['宮'] || p['palace'] || (i + 1);
+          const star = p['星'] || p['star'] || '';
+          const door = p['門'] || p['door'] || '';
+          const stem = p['天盤干'] || p['skyStem'] || '';
+          html += `<div class="palace-cell"><div class="palace-num">${num}宫</div><div class="star">${star}</div><div class="door">${door}</div><div class="stem">${stem}</div></div>`;
+        });
+        html += '</div>';
+      } else {
+        html += '<div class="loading" style="margin-top:10px;">盘面数据已获取，但九宫结构字段未识别。可查看控制台输出。</div>';
+        console.log('奇门盘对象:', obj);
+      }
+      panel.innerHTML = html;
+    } catch (e) {
+      panel.innerHTML = `<div class="error-msg">奇门起局失败：${e.message}</div>`;
+    }
+  }
+
+  // ---------- 主流程 ----------
+  async function updateUI() {
+    const dateStr = document.getElementById('birthDate').value;
+    const timeStr = document.getElementById('birthTime').value;
+    if (!dateStr || !timeStr) return;
+
+    // 八字
+    let bazi;
+    try {
+      bazi = getBaziFromLunar(dateStr, timeStr);
+    } catch (e) {
+      document.getElementById('footnote').innerHTML = `<span class="error-msg">八字排盘失败：${e.message}</span>`;
+      return;
+    }
+    const dayGanIndex = TIAN_GAN.indexOf(bazi.dayGZ[0]);
+    const dayMasterWx = GAN_WUXING[dayGanIndex];
+
+    document.getElementById('yearPillar').textContent = bazi.yearGZ;
+    document.getElementById('monthPillar').textContent = bazi.monthGZ;
+    document.getElementById('dayPillar').textContent = bazi.dayGZ;
+    document.getElementById('hourPillar').textContent = bazi.hourGZ;
+    document.getElementById('dayMaster').textContent = bazi.dayGZ[0] + WUXING_NAMES[dayMasterWx];
+
+    // 当前流日/月/年
+    const now = new Date();
+    const nowSolar = Solar.fromYmdHms(now.getFullYear(), now.getMonth()+1, now.getDate(), 12, 0, 0);
+    const nowLunar = nowSolar.getLunar();
+    const dayGZ = nowLunar.getDayInGanZhiExact();
+    const monthGZ = nowLunar.getMonthInGanZhiExact();
+    const yearGZ = nowLunar.getYearInGanZhiExact();
+    // 周运：流日+3
+    const plus3 = Solar.fromYmdHms(now.getFullYear(), now.getMonth()+1, now.getDate()+3, 12, 0, 0).getLunar().getDayInGanZhiExact();
+
+    const dayF = generateFortune(dayMasterWx, dayGZ, 'day');
+    const weekF = generateFortune(dayMasterWx, plus3, 'week');
+    const monthF = generateFortune(dayMasterWx, monthGZ, 'month');
+    const yearF = generateFortune(dayMasterWx, yearGZ, 'year');
+
+    function setCard(id, f) {
+      document.getElementById(id + 'Level').textContent = f.level;
+      document.getElementById(id + 'Desc').textContent = f.desc;
+      const el = document.getElementById(id + 'Badges');
+      el.innerHTML = '';
+      f.badges.forEach(b => {
+        const sp = document.createElement('span');
+        sp.className = 'badge ' + b.type;
+        sp.textContent = b.text;
+        el.appendChild(sp);
+      });
+    }
+    setCard('day', dayF); setCard('week', weekF); setCard('month', monthF); setCard('year', yearF);
+
+    // 奇门
+    renderQimen();
+
+    // 星盘
+    const astroPanel = document.getElementById('astroPanel');
+    if (!Astronomy) {
+      astroPanel.innerHTML = '<div class="error-msg">astronomy-engine 未加载（可能是网络问题），星盘功能不可用。</div>';
+    } else {
+      try {
+        astroPanel.innerHTML = '<div class="loading">计算行星位置…</div>';
+        const astro = await computeAstro(dateStr, timeStr);
+        let html = '<div style="margin-bottom:10px;font-size:0.8rem;color:#b09bd0;">本命行星黄经（星座/度数）</div>';
+        html += '<div class="astro-list">';
+        astro.natal.forEach(p => {
+          html += `<div class="astro-item"><span class="body-name">${p.name}</span> <span class="sign">${p.sign}</span><span class="degree">${p.deg}°</span></div>`;
+        });
+        html += '</div>';
+        html += '<div style="margin:14px 0 8px;font-size:0.8rem;color:#b09bd0;">当前行运行星位置</div>';
+        html += '<div class="astro-list">';
+        astro.transit.forEach(p => {
+          html += `<div class="astro-item"><span class="body-name">${p.name}</span> <span class="sign">${p.sign}</span><span class="degree">${p.deg}°</span></div>`;
+        });
+        html += '</div>';
+        html += '<div style="margin-top:10px;font-size:0.7rem;color:#6b5d85;">注：仅展示黄经位置，未做相位计算与宫位判断。</div>';
+        astroPanel.innerHTML = html;
+      } catch (e) {
+        astroPanel.innerHTML = `<div class="error-msg">星盘计算失败：${e.message}</div>`;
+      }
+    }
+
+    document.getElementById('footnote').innerHTML = '⚡ 八字排盘 lunar-javascript · 奇门 qimen-dunjia · 星盘 astronomy-engine · 相位判断未实现';
+  }
+
+  document.getElementById('generateBtn').addEventListener('click', updateUI);
+  window.addEventListener('load', () => setTimeout(updateUI, 500));
+</script>
+</body>
+</html>
